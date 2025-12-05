@@ -67,13 +67,6 @@
             <artifactId>spring-boot-starter-log4j2</artifactId>
 	</dependency>
 
-<!-- JUnit 5 pour tests -->
-	<dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-	</dependency>
-
 <!-- Actuator pour Prometheus -->
 	<dependency>
     	    <groupId>org.springframework.boot</groupId>

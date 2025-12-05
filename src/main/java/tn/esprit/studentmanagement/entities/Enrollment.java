@@ -19,12 +19,8 @@ public class Enrollment {
     private Double grade;
     @Enumerated(EnumType.STRING)
     private Status status;
-
     @ManyToOne
-    private Student student;
-
-    @ManyToOne
-    private Course course;
+    private Department department;
 
 
 

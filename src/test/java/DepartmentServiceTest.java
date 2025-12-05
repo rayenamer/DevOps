@@ -6,32 +6,36 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 
 import tn.esprit.studentmanagement.entities.Department;
 
-@SpringBootTest
-@ActiveProfiles("test")  // Uses H2 configuration
+@DataJpaTest
+@Import(DepartmentService.class) // Import your service since @DataJpaTest only loads repositories
 class DepartmentServiceTest {
 
     @Autowired
     private DepartmentService departmentService;
 
     @Test
-    void testSaveAndGetDepartment() {
+    void testSaveGetAndDeleteDepartment() {
+        // Create a new Department
         Department dept = new Department();
         dept.setName("Computer Science");
-        
+        dept.setLocation("Building A");
+        dept.setPhone("12345678");
+        dept.setHead("Dr. Smith");
+
         // Save department
         Department saved = departmentService.saveDepartment(dept);
         assertNotNull(saved.getIdDepartment(), "Department ID should not be null");
 
-        // Fetch by ID
+        // Get by ID
         Department fetched = departmentService.getDepartmentById(saved.getIdDepartment());
         assertEquals("Computer Science", fetched.getName());
 
-        // Fetch all
+        // Get all
         List<Department> allDepts = departmentService.getAllDepartments();
         assertTrue(allDepts.size() > 0);
 
