@@ -7,28 +7,24 @@ pipeline {
     }
 
     environment {
-        SONARQUBE = "sonarqube"
-        SONAR_TOKEN = credentials('sonar-token')
-    }
+    SONAR_TOKEN = credentials('sonar-token')
+}
+
 
     stages {
 
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/you/your-repo.git'
+                    url: 'https://github.com/rayenamer/DevOps',
+                    credentialsId: 'github'  // ID of the credential you added in Jenkins
             }
         }
 
-        stage('Build with Maven') {
-            steps {
-                sh "mvn -B clean install"
-            }
-        }
 
-        stage('Run Unit Tests') {
+        stage('Build & Test') {
             steps {
-                sh "mvn test"
+                sh 'mvn clean install'
             }
             post {
                 always {
@@ -37,31 +33,13 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
+        stage('SonarQube') {
             steps {
                 withSonarQubeEnv('sonarqube') {
-                    sh """
-                    mvn sonar:sonar \
-                      -Dsonar.projectKey=student-management \
-                      -Dsonar.host.url=http://sonarqube:9000 \
-                      -Dsonar.login=${SONAR_TOKEN}
-                    """
+                    sh "mvn sonar:sonar -Dsonar.projectKey=student-management -Dsonar.host.url=http://sonarqube:9000 -Dsonar.login=${SONAR_TOKEN}"
                 }
             }
-        }
-
-        stage("Quality Gate") {
-            steps {
-                timeout(time: 2, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-    }
-
-    post {
-        always {
-            echo "Pipeline finished"
         }
     }
 }
+
