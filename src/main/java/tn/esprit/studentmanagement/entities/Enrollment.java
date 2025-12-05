@@ -21,9 +21,9 @@ public class Enrollment {
     private Status status;
     @ManyToOne
     private Department department;
-
-
-
-
+    @ManyToOne
+    private Course course;
+    @ManyToOne
+    private Student student;
 
 }

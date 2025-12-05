@@ -15,7 +15,7 @@ import tn.esprit.studentmanagement.entities.Enrollment;
 import tn.esprit.studentmanagement.entities.Status;
 
 @DataJpaTest
-@Import(EnrollmentService.class)
+@Import({EnrollmentService.class, DepartmentService.class})
 class EnrollmentServiceTest {
 
     @Autowired

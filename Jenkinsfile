@@ -2,61 +2,89 @@ pipeline {
     agent any
 
     tools {
-        maven 'MAVEN'
-        jdk 'JDK17'
-    }
-
-    environment {
-        SONAR_TOKEN = credentials('sonar-token')
+        maven 'MAVEN'  // Nom Maven dans Jenkins
+        jdk 'JDK17'    // Nom du JDK configuré
     }
 
     stages {
-        stage('Checkout') {
+        stage('📥 1) Git Clone') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/rayenamer/DevOps',
-                    credentialsId: 'github'
+                git branch: 'main', 
+                    url: 'https://github.com/rayenamer/DevOps'
+                sh 'echo "✅ Code source récupéré"'
             }
         }
 
-        stage('Build & Test') {
+        stage('🏗️ 2) Compile') {
             steps {
-                // Only run the working test
-                sh 'mvn clean test -Dtest=DepartmentServiceTest'
+                sh 'mvn clean compile'
+                sh 'echo "✅ Compilation réussie"'
             }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
+        }
+
+        stage('🧪 3) Test') {
+            steps {
+                script {
+                    try {
+                        echo "🧪 Running Maven tests with H2 in-memory database..."
+                        sh 'mvn test'
+                        echo "✅ Tests réussis"
+                        currentBuild.result = 'SUCCESS'
+                    } catch (Exception e) {
+                        echo "❌ Tests échoués"
+                        currentBuild.result = 'FAILURE'
+                        error "Erreur pendant les tests"
+                    } finally {
+                        // Publish test results
+                        junit 'target/surefire-reports/*.xml'
+                    }
                 }
             }
         }
 
-
-        stage('Package JAR') {
-            steps {
-                sh 'mvn package'
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
-                }
-            }
-        }
-
-        stage('SonarQube') {
+        stage('📦 4) Build JAR') {
             when {
-                expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
+                expression { currentBuild.result == 'SUCCESS' }
             }
             steps {
-                withSonarQubeEnv('sonarqube') {
-                    sh "mvn sonar:sonar -Dsonar.projectKey=student-management -Dsonar.host.url=http://sonarqube:9000 -Dsonar.login=${SONAR_TOKEN}"
+                sh 'mvn package -DskipTests'
+                sh '''
+                    echo "=== ARTEFACTS ==="
+                    ls -la target/*.jar
+                    echo "=== TAILLE ==="
+                    du -h target/*.jar
+                '''
+                archiveArtifacts 'target/*.jar'
+                sh 'echo "✅ JAR archivé dans Jenkins"'
+            }
+        }
+
+        stage('🔍 5) SonarQube Analysis') {
+            when {
+                expression { currentBuild.result == 'SUCCESS' }
+            }
+            steps {
+                withCredentials([string(credentialsId: 'jenkins_sonar', variable: 'SONAR_TOKEN')]) {
+                    sh '''
+                        echo "🔍 Analyse SonarQube"
+                        mvn sonar:sonar -Dsonar.projectKey=Devops \
+                            -Dsonar.host.url=http://192.168.132.129:9000 \
+                            -Dsonar.login=$SONAR_TOKEN
+                    '''
                 }
             }
         }
     }
 
     post {
-        success { echo 'Pipeline completed successfully!' }
-        failure { echo 'Pipeline failed. Check logs!' }
+        always {
+            echo "📊 Statut: ${currentBuild.result ?: 'UNKNOWN'}"
+        }
+        success {
+            echo '🎉 SUCCÈS! JAR disponible et analysé par SonarQube.'
+        }
+        failure {
+            echo '❌ ÉCHEC du pipeline.'
+        }
     }
 }
